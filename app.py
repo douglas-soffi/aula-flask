@@ -1,7 +1,9 @@
 from flask import Flask, request, jsonify
+from flask_restful import Resource, Api
 import json
 
 app = Flask(__name__)
+api = Api(app)
 
 devs = [
     {
@@ -20,49 +22,38 @@ devs = [
     }
 ]
 
-@app.route("/dev/<int:id>/", methods=["GET", "PUT", "DELETE"])
-def devs_by_id(id):
+class Dev_by_id(Resource):
 
-    if request.method == "GET":
+    def get(self, id):
 
         try:
-            dev = devs[id]
-            return dev
+            response = devs[id]
 
         except IndexError:
             response = {
                 "status":"Erro",
                 "mensagem":f"Desenvolvedor {id} não existe"
             }
-            return response
-
-        except Exception:
-            response = {
-                "status":"Erro",
-                "mensagem":"Erro desconhecido. Procure o administrador"
-            }
-            return response
-        
-
-    elif request.method == "PUT":
+        return response
+    
+    def put(self, id):
 
         try:
-            dados = json.loads(request.data)
-            devs[id] = dados
-            return dados
+            response = json.loads(request.data)
+            devs[id] = response
 
-        except Exception:
+        except IndexError:
             response = {
                 "status":"Erro",
-                "mensagem":"Erro desconhecido. Procure o administrador"
+                "mensagem":f"Desenvolvedor {id} não existe"
             }
-            return response
+        return response
 
-    elif request.method == "DELETE":
+    def delete(self, id):
 
         try:
             devs.pop(id)
-            return {
+            response = {
                 "status":"Êxito",
                 "mensagem":"Registro excluído"
             }
@@ -72,28 +63,27 @@ def devs_by_id(id):
                 "status":"Erro",
                 "mensagem":f"Desenvolvedor {id} não existe"
             }
-            return response
+        return response
 
-        except Exception:
-            response = {
-                "status":"Erro",
-                "mensagem":"Erro desconhecido. Procure o administrador"
-            }
-            return response
+class Create_and_list_dev(Resource):
+    
+    def get(self):
 
-@app.route("/dev/", methods=["POST", "GET"])
-def create_devs():
+        response = jsonify(devs) 
+        return response
 
-    if request.method == "POST":
+    def post(self):
+
         dados = json.loads(request.data)
         devs.append(dados)
-        return {
+        response = {
             "status":"Êxito",
             "mensagem":"Registro inserido"
         }
+        return response
 
-    elif request.method == "GET":
-        return jsonify(devs)
+api.add_resource(Dev_by_id, "/dev/<int:id>/")
+api.add_resource(Create_and_list_dev, "/dev/")
 
 if __name__ == "__main__":
     app.run(debug=True)
